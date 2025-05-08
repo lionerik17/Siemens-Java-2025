@@ -369,6 +369,36 @@ class InternshipApplicationTests {
 	}
 
 	@Test
+	void createItem_emptyEmail() {
+		Item item = new Item(
+				null,
+				"Bad Item",
+				"Desc",
+				"Status",
+				"");
+
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/items", item, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(response.getBody()).contains("Invalid email format");
+	}
+
+	@Test
+	void createItem_emptyField() {
+		Item item = new Item(
+				null,
+				"",
+				"Desc",
+				"Status",
+				"");
+
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/items", item, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(response.getBody()).contains("must not be empty");
+	}
+
+	@Test
 	void getItemById_success() {
 		Item item = new Item(
 				null,
