@@ -509,4 +509,38 @@ class InternshipApplicationTests {
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
+
+	@Test
+	void processItems_success() {
+		Item item1 = new Item(
+				null,
+				"Item 1",
+				"Desc 1",
+				"Status 1",
+				"item1@test.com");
+		Item item2 = new Item(
+				null,
+				"Item 2",
+				"Desc 2",
+				"Status 2",
+				"item2@test.com");
+
+		ResponseEntity<Item> response1 = restTemplate.postForEntity("/api/items", item1, Item.class);
+		ResponseEntity<Item> response2 = restTemplate.postForEntity("/api/items", item2, Item.class);
+
+		assertThat(response1.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+		assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+		ResponseEntity<Item[]> processResponse = restTemplate.getForEntity("/api/items/process", Item[].class);
+
+		assertThat(processResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+		Item[] processedItems = processResponse.getBody();
+
+		assertThat(processedItems).isNotNull();
+		assertThat(processedItems.length).isGreaterThanOrEqualTo(2);
+
+		for (Item item : processedItems) {
+			assertThat(item.getStatus()).isEqualTo("PROCESSED");
+		}
+	}
 }
