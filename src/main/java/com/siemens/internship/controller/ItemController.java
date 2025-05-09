@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 @RestController
@@ -79,22 +80,17 @@ public class ItemController {
         }
     }
 
-    // modified to wait for result using get() (since processItemsAsync is asynchronous)
+    // modified to return async response without blocking the request
 
     @GetMapping("/process")
-    public ResponseEntity<List<Item>> processItems() {
-        try {
-            List<Item> result = itemService.processItemsAsync().get();
-            return new ResponseEntity<>(result, HttpStatus.OK);
-        } catch (CancellationException e) {
-            return new ResponseEntity<>(HttpStatus.REQUEST_TIMEOUT);
-        } catch (ExecutionException e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public CompletableFuture<ResponseEntity<List<Item>>> processItems() {
+        return itemService.processItemsAsync()
+                .thenApply(result -> new ResponseEntity<>(result, HttpStatus.OK))
+                .exceptionally(e -> {
+                    if (e.getCause() instanceof CancellationException) {
+                        return new ResponseEntity<>(HttpStatus.REQUEST_TIMEOUT);
+                    }
+                    return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+                });
     }
 }
